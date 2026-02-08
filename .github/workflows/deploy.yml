@@ -3,11 +3,7 @@ name: Build and Push to ACR
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  id-token: write # Nécessaire pour l'authentification sans mot de passe (OIDC) si on l'utilise, ou on utilise des secrets classiques.
+    
 
 jobs:
   build-and-push:
@@ -16,24 +12,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 1. Connexion à Azure (On va devoir configurer ce secret)
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # ON SUPPRIME L'ÉTAPE "Azure Login" QUI BLOQUAIT
 
-      # 2. Connexion au registre Docker (ACR)
+      # Nouvelle méthode : Connexion directe avec Docker
       - name: Login to ACR
-        run: |
-          az acr login --name acrstreamboxdev001 
-          # ⚠️ Remplace 'acrstreamboxdev001' par le VRAI nom de ton ACR (sans tirets)
-          # Tu peux le trouver avec : az acr list --query "[].name" -o tsv
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      # 3. Build et Push de l'image Docker
+      # Build et Push
       - name: Build and Push Docker image
         uses: docker/build-push-action@v4
         with:
           context: ./app/backend
           push: true
-          tags: acrstreamboxdev001.azurecr.io/backend:v1
-          # ⚠️ Là aussi, remplace 'acrstreamboxdev001' par ton nom d'ACR
+          # On utilise le secret username pour construire le nom de l'image dynamiquement
+          tags: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/backend:v1
