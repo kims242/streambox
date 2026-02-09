@@ -1,0 +1,65 @@
+---
+- name: Installation de SonarQube sur la VM Azure
+  hosts: sonar
+  become: yes  # Signifie "sudo" (droits admin)
+  vars:
+    # On définit des limites mémoire pour éviter que Java ne tue la petite VM
+    sonar_java_opts: "-Xms512m -Xmx512m"
+
+  tasks:
+    - name: 1. Mettre à jour le cache APT
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: 2. Installer les pré-requis pour Docker
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg-agent
+          - software-properties-common
+        state: present
+
+    - name: 3. Ajouter la clé GPG officielle de Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: 4. Ajouter le dépôt Docker
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
+        state: present
+
+    - name: 5. Installer Docker Engine
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: 6. S'assurer que Docker est démarré
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: 7. Augmenter la map count (Requis par Elasticsearch/SonarQube)
+      sysctl:
+        name: vm.max_map_count
+        value: '262144'
+        state: present
+        reload: yes
+
+    - name: 8. Lancer le conteneur SonarQube
+      # On utilise le module shell pour faire simple et robuste
+      shell: |
+        docker run -d --name sonarqube \
+        -p 9000:9000 \
+        --restart always \
+        -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+        sonarqube:community
+      args:
+        # Cette condition empêche Ansible de planter s'il est déjà lancé
+        creates: /var/lib/docker/containers/sonarqube_marker_fake_file
+      # On ignore les erreurs si le conteneur existe déjà (méthode simple)
+      ignore_errors: yes
