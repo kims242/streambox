@@ -12,7 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # ON SUPPRIME L'ÉTAPE "Azure Login" QUI BLOQUAIT.
+      # ON SUPPRIME L'ÉTAPE "Azure Login" QUI BLOQUAIT...
 
       # Nouvelle méthode : Connexion directe avec Docker
       - name: Login to ACR
