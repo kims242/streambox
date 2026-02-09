@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      # On utilise le secret créé à l'étape 1 pour avoir le droit de télécharger l'image
+      imagePullSecrets:
+      - name: acr-secret
+      containers:
+      - name: backend
+        # 👇 REMPLACE CECI PAR TON VRAI NOM D'IMAGE (ex: acrstreamboxdev001.azurecr.io/backend:v1)
+        image: acrstreamboxdev001.azurecr.io/backend:v1
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
