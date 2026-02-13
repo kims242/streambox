@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+  namespace: cloudshop-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "shop-password" # Idéalement via Secret, mais simple pour l'exercice
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: db-storage
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres-data
+      volumes:
+      - name: db-storage
+        persistentVolumeClaim:
+          claimName: db-pvc
+      # ⚠️ Point CRITIQUE : Taints & Tolerations
+      tolerations:
+      - key: "db-node"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      # Pour forcer le pod à aller sur le noeud qui a le taint
+      nodeSelector:
+        role: db-node

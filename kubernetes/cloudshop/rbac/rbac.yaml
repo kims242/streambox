@@ -1,0 +1,51 @@
+# 1. Service Accounts
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backend-sa
+  namespace: cloudshop-ns
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frontend-sa
+  namespace: cloudshop-ns
+
+# 2. Role pour le Backend (Lecture Secrets/ConfigMaps)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: cloudshop-ns
+  name: backend-reader-role
+rules:
+- apiGroups: [""] 
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+
+# 3. Binding Backend
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backend-reader-binding
+  namespace: cloudshop-ns
+subjects:
+- kind: ServiceAccount
+  name: backend-sa
+  namespace: cloudshop-ns
+roleRef:
+  kind: Role
+  name: backend-reader-role
+  apiGroup: rbac.authorization.k8s.io
+
+# 4. ClusterRole ReadOnly (Demandé pour un user test)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pod-reader-global
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]

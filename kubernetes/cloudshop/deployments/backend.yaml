@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: cloudshop-ns
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      serviceAccountName: backend-sa # Créé plus bas
+      affinity:
+        # Anti-Affinity : Ne pas être sur le même noeud que le Frontend
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - frontend
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: backend
+        # On utilise une image publique (pas besoin de mot de passe)
+        image: python:3.9-slim 
+        # On lance un petit serveur web Python natif pour simuler l'API
+        command: ["/bin/sh", "-c", "python3 -m http.server 5000"]
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: "database-service"
