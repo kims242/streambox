@@ -10,7 +10,7 @@ spec:
   tls:
   - hosts:
       - cloudshop.local
-    secretName: cloudshop-tls # Tu devras créer ce secret ou utiliser cert-manager
+    secretName: cloudshop-tls 
   rules:
   - host: cloudshop.local
     http:
